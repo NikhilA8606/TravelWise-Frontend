@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Load the GoMaps API; make sure the callback function initializes the map -->
+    <script src="https://gomaps.pro/maps/api/js?key=AlzaSyfrbiw2DDv9l1FFWQMFu9LeUuZTKhB4Aeq&libraries=geometry,places&callback=initMap" async defer></script>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Define the global function that GoMaps API will call once loaded
+      function initMap() {
+        // Optionally, you could use a global flag or event emitter to notify React components that the map is ready
+        console.log("GoMaps API loaded successfully.");
+        // Perform any setup needed for the map initialization
+      }
+    </script>
+  </body>
+</html>
