@@ -26,10 +26,10 @@ const Header = () => {
           <span class="ml-3 text-xl">Travelwise</span>
         </a>
         <nav class="md:ml-auto flex flex-wrap items-center text-base justify-center">
-          <a class="mr-5 hover:text-gray-900">Home</a>
-          {/* <a class="mr-5 hover:text-gray-900">Second Link</a>
-          <a class="mr-5 hover:text-gray-900">Third Link</a> */}
-          {/* <a class="mr-5 hover:text-gray-900">Fourth Link</a> */}
+          <a onClick={()=>{window.location.href = "/"}} class="mr-5 hover:text-gray-900">Home</a>
+          <a onClick={()=>{window.location.href = "/bus"}} class="mr-5 hover:text-gray-900">Private Bus</a>
+          <a onClick={()=>{window.location.href = "/railway"}} class="mr-5 hover:text-gray-900">Train</a>
+          
         </nav>
         <button
           onClick={()=>{window.location.href = "/sign"}}

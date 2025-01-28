@@ -28,27 +28,21 @@ const travelOptions = [
     time: "2h 46min",
     price: "₹180–2,400",
     best: true,
-    handleClick: () => {
-      window.location.href = "/railway";
-    }
+    
   },
   {
     mode: "Bus",
     icon: <FaBus className="text-red-500" />,
     time: "5h 4min",
     price: "₹205–526",
-    handleClick: () => {
-      window.location.href = "/data";
-    }
+    
   },
   {
     mode: "Taxi",
     icon: <FaTaxi className="text-violet-500" />,
     time: "2h 55min",
     price: "₹4,300–5,500",
-    handleClick: () => {
-      window.location.href = "/";
-    }
+    
   },
   {
     mode: "Drive",
@@ -56,9 +50,7 @@ const travelOptions = [
     time: "2h 55min",
     price: "₹1,816–2,624",
     distance: "183 km",
-    handleClick: () => {
-      window.location.href = "/";
-    }
+    
   },
 ];
 
@@ -70,7 +62,7 @@ const Details = () => {
         {travelOptions.map((option, index) => (
           <SheetTrigger asChild>
             <Card
-              onClick={option.handleClick}
+              
               key={index} className="p-4 flex items-center  shadow-md">
               <div className="text-2xl text-gray-700 mr-4">{option.icon}</div>
               <div className="flex-1">

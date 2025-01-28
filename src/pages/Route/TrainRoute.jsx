@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-const PrivateBusRoute = () => {
+const TrainRoute = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { bus, stations } = location.state || {};
@@ -20,7 +20,6 @@ const PrivateBusRoute = () => {
     );
   }
 
-  
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -59,4 +58,4 @@ const PrivateBusRoute = () => {
   );
 };
 
-export default PrivateBusRoute;
+export default TrainRoute;

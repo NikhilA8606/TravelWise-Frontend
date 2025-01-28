@@ -8,6 +8,17 @@ const IndianRailway = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const handleCardClick = (train) => {
+    console.log(train); 
+    if (train && train.stations) {
+      navigate("/trainroute", {
+        state: { bus, stations: bus.stations },
+      });
+    } else {
+      setError("No station data available for the selected bus.");
+    }
+  };
+
   const handleSearch = async (event) => {
     event.preventDefault();
 
@@ -29,7 +40,7 @@ const IndianRailway = () => {
         dateOfJourney: "2025-01-17",
       },
       headers: {
-        "x-rapidapi-key": "a723e52050msh168a655572d8a0ap1f8414jsne8b9ac72e2a0",
+        "x-rapidapi-key": "9f7bf737ffmsh001e9f884baf487p1775a0jsnfbef7994547a",
         "x-rapidapi-host": "irctc1.p.rapidapi.com",
       },
     };
@@ -97,6 +108,7 @@ const IndianRailway = () => {
           {trainData.map((train) => (
             <div
               key={train.train_number}
+              onClick={() => handleCardClick(train)} 
               className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
             >
               <h2 className="text-lg font-semibold text-gray-800 mb-2">{train.train_name}</h2>
@@ -104,10 +116,10 @@ const IndianRailway = () => {
                 <strong>Train Number:</strong> {train.train_number}
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Departure:</strong> {train.from_station} ({train.departure_time})
+                <strong>Departure:</strong> {train.from_sta}
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Arrival:</strong> {train.to_station} ({train.arrival_time})
+                <strong>Arrival:</strong> {train.to_std } 
               </p>
             </div>
           ))}
