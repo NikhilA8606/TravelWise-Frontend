@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import irctc from "../../assets/irctc.png";
 
 const IndianRailway = () => {
   const [source, setSource] = useState("");
@@ -57,6 +58,7 @@ const IndianRailway = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4">
+      <img src={irctc} alt="" className="w-20 h-24 object-cover mb-6" />
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Train Schedule Finder</h1>
       <form
         onSubmit={handleSearch}
