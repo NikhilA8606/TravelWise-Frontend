@@ -17,7 +17,6 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
-import Details from "./Details";
 
 const center = { lat: 48.8584, lng: 2.2945 };
 const libraries = ["places"];
@@ -31,6 +30,7 @@ const Map = () => {
   const [directionsResponse, setDirectionsResponse] = useState(null);
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
+  const [nearestStation, setNearestStation] = useState(null);
 
   const originRef = useRef();
   const destinationRef = useRef();
@@ -61,12 +61,11 @@ const Map = () => {
     return <SkeletonText />;
   }
 
-  
-
   async function calculateRoute(retryCount = 3) {
     try {
       const origin = originRef.current.value.trim();
       const destination = destinationRef.current.value.trim();
+      findNearestStation();
       if (origin === "" || destination === "") return;
 
       const directionsService = new google.maps.DirectionsService();
@@ -75,6 +74,7 @@ const Map = () => {
         destination,
         travelMode: google.maps.TravelMode.DRIVING,
       });
+      console.log(results.routes[0].legs[0]);
 
       setDirectionsResponse(results);
       setDistance(results.routes[0].legs[0].distance.text);
@@ -92,12 +92,84 @@ const Map = () => {
     setDirectionsResponse(null);
     setDistance("");
     setDuration("");
+    setNearestStation(null);
     originRef.current.value = "";
     destinationRef.current.value = "";
   }
 
+  // Fetch nearby railway stations
+  const fetchNearbyRailwayStations = async (location) => {
+    const apiKey = "AlzaSys3asb3bDSsEF-XH8pdE39mpqJ50bwodan"; // Replace with your API key
+    const radius = 20000; // Search within 5 km
+    const type = "train_station"; // Search for railway stations
+
+    const url = `https://maps.gomaps.pro/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&type=${type}&key=${apiKey}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.results; // Returns an array of nearby railway stations
+    } catch (error) {
+      console.error("Error fetching nearby railway stations:", error);
+      return [];
+    }
+  };
+
+  // Geocode the input location (convert address to lat/lng)
+  const geocodeLocation = async (address) => {
+    const geocoder = new google.maps.Geocoder();
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          resolve(results[0].geometry.location);
+        } else {
+          reject(new Error("Geocoding failed"));
+        }
+      });
+    });
+  };
+
+  // Find the nearest railway station and display it on the map
+  const findNearestStation = async () => {
+    const locationInput = destinationRef.current.value.trim();
+    if (!locationInput) return;
+
+    try {
+      // Geocode the input location
+      const location = await geocodeLocation(locationInput);
+      console.log("Geocoded location:", location);
+
+      // Fetch nearby railway stations
+      const stations = await fetchNearbyRailwayStations({
+        lat: location.lat(),
+        lng: location.lng(),
+      });
+
+      if (stations.length === 0) {
+        console.error("No railway stations found nearby.");
+        return;
+      }
+
+      // Use the first railway station found (nearest one)
+      console.log("Nearby railway stations:", stations);
+      const nearestStation = stations[0];
+      setNearestStation(nearestStation);
+
+      // Place a marker at the nearest station
+      if (map) {
+        new google.maps.Marker({
+          position: {
+            lat: nearestStation.geometry.location.lat,
+            lng: nearestStation.geometry.location.lng,
+          },
+          map,
+        });
+      }
+    } catch (error) {
+      console.error("Error finding nearest station:", error);
+    }
+  };
   return (
-    
     <Flex
       position="relative"
       h="100vh"
@@ -106,7 +178,6 @@ const Map = () => {
       flexDirection="column"
       alignItems="center"
     >
-      
       <Box position="absolute" top={0} left={0} h="100%" w="100%">
         <GoogleMap
           center={center}
@@ -125,7 +196,7 @@ const Map = () => {
           )}
         </GoogleMap>
       </Box>
-      
+
       <Box
         p={4}
         borderRadius="lg"
@@ -150,7 +221,7 @@ const Map = () => {
               />
             </Autocomplete>
           </Box>
-          
+
           <ButtonGroup>
             <Button colorScheme="pink" type="submit" onClick={calculateRoute}>
               Calculate Route
@@ -165,6 +236,8 @@ const Map = () => {
         <HStack spacing={4} mt={4} justifyContent="space-between">
           <Text>Distance: {distance} </Text>
           <Text>Duration: {duration} </Text>
+          <Text>Nearest: {nearestStation?.name} </Text>
+
           <IconButton
             aria-label="center map"
             icon={<FaLocationArrow />}
@@ -176,9 +249,7 @@ const Map = () => {
           />
         </HStack>
       </Box>
-       
     </Flex>
-    
   );
 };
 

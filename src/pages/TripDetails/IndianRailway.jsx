@@ -41,7 +41,7 @@ const IndianRailway = () => {
         dateOfJourney: "2025-01-17",
       },
       headers: {
-        "x-rapidapi-key": "9f7bf737ffmsh001e9f884baf487p1775a0jsnfbef7994547a",
+        "x-rapidapi-key": "f4feda43a5msh59220e1f97cb7a2p1352b8jsned14e3c92a47",
         "x-rapidapi-host": "irctc1.p.rapidapi.com",
       },
     };
