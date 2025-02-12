@@ -6,10 +6,10 @@ import {
   HStack,
   IconButton,
   Input,
-  SkeletonText,
+  Spinner,
   Text,
 } from "@chakra-ui/react";
-import { FaLocationArrow, FaTimes } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 import {
   useJsApiLoader,
   GoogleMap,
@@ -17,25 +17,39 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
+import { useRoute } from "@/context/RouteContext";
 
 const center = { lat: 48.8584, lng: 2.2945 };
 const libraries = ["places"];
 
 const Map = () => {
+  const {
+    setDistance,
+    setDuration,
+    setNearestStation,
+    distance,
+    duration,
+    nearestStation,
+    setSource,
+    setDestination,
+    intermediateStations,
+    setIntermediateStations,
+    setBusrate,
+    setTaxirate,
+    setDriverate,
+  } = useRoute();
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOMAPS_API_KEY,
     libraries,
   });
   const [map, setMap] = useState(null);
   const [directionsResponse, setDirectionsResponse] = useState(null);
-  const [distance, setDistance] = useState("");
-  const [duration, setDuration] = useState("");
-  const [nearestStation, setNearestStation] = useState(null);
 
   const originRef = useRef();
   const destinationRef = useRef();
   const markerRef = useRef(null);
 
+  
   useEffect(() => {
     if (isLoaded && map && !markerRef.current) {
       if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
@@ -58,15 +72,71 @@ const Map = () => {
   }, [isLoaded, map]);
 
   if (!isLoaded) {
-    return <SkeletonText />;
+    return (
+      <Flex justify="center" align="center" h="100vh" w="70vw">
+        <Spinner size="xl" thickness="4px" color="pink.500" />
+      </Flex>
+    );
   }
+
+  function calculateBusFare(distanceInKm) {
+    const MIN_FARE = 10;
+    const BASE_DISTANCE = 2.5;
+    const PER_KM_RATE = 1;
+  
+    if (distanceInKm <= BASE_DISTANCE) {
+      return MIN_FARE;
+    }
+  
+    const additionalDistance = distanceInKm - BASE_DISTANCE;
+    const additionalFare = additionalDistance * PER_KM_RATE;
+    const totalFare = MIN_FARE + additionalFare;
+  
+    return Math.ceil(totalFare);
+  }
+  
+  function calculateTaxiFare(distanceInKm) {
+    const MIN_FARE = 30;
+    const BASE_DISTANCE = 1.5;
+    const PER_KM_RATE = 15;
+  
+    if (distanceInKm <= BASE_DISTANCE) {
+      return MIN_FARE;
+    }
+  
+    const additionalDistance = distanceInKm - BASE_DISTANCE;
+    const additionalFare = additionalDistance * PER_KM_RATE;
+    const totalFare = MIN_FARE + additionalFare;
+  
+    return Math.ceil(totalFare);
+  }
+
+  function calculateDriverRate(distanceInKm) {
+    const FUEL_PRICE_PER_LITER = 110; 
+    const AVERAGE_MILEAGE = 15; 
+
+    const fuelCost = (distanceInKm / AVERAGE_MILEAGE) * FUEL_PRICE_PER_LITER;
+    return Math.ceil(fuelCost);
+  }
+
 
   async function calculateRoute(retryCount = 3) {
     try {
       const origin = originRef.current.value.trim();
       const destination = destinationRef.current.value.trim();
-      findNearestStation();
       if (origin === "" || destination === "") return;
+
+      setSource(origin);
+      setDestination(destination);
+      nearestStation.origin = await findNearestStation(originRef);
+      nearestStation.destination = await findNearestStation(destinationRef);
+
+      if (
+        !origin.includes(nearestStation.origin) &&
+        !destination.includes(nearestStation.destination)
+      ) {
+        setIntermediateStations(true);
+      }
 
       const directionsService = new google.maps.DirectionsService();
       const results = await directionsService.route({
@@ -74,11 +144,28 @@ const Map = () => {
         destination,
         travelMode: google.maps.TravelMode.DRIVING,
       });
-      console.log(results.routes[0].legs[0]);
 
       setDirectionsResponse(results);
       setDistance(results.routes[0].legs[0].distance.text);
       setDuration(results.routes[0].legs[0].duration.text);
+
+      // Extract numerical distance value from the string (e.g., "10 km" => 10)
+      const distanceValue = parseFloat(results.routes[0].legs[0].distance.text);
+
+      // Calculate and set bus and taxi fares
+      const busFare = calculateBusFare(distanceValue);
+      const taxiFare = calculateTaxiFare(distanceValue);
+      const driverFare = calculateDriverRate(distanceValue);
+
+
+      setBusrate(busFare);
+      setTaxirate(taxiFare);
+      setDriverate(driverFare);
+
+      // Log the bus and taxi fares
+      console.log("busrate:", busFare);
+      console.log("taxirate:", taxiFare);
+      console.log("driverRate:", driverFare);
     } catch (error) {
       console.error("Directions request failed", error);
       if (retryCount > 0) {
@@ -87,35 +174,36 @@ const Map = () => {
       }
     }
   }
-
+  
   function clearRoute() {
     setDirectionsResponse(null);
     setDistance("");
     setDuration("");
-    setNearestStation(null);
+    setNearestStation("");
+    setBusrate("");
+    setTaxirate("");
+    setDriverate("");
     originRef.current.value = "";
     destinationRef.current.value = "";
   }
 
-  // Fetch nearby railway stations
   const fetchNearbyRailwayStations = async (location) => {
-    const apiKey = "AlzaSys3asb3bDSsEF-XH8pdE39mpqJ50bwodan"; // Replace with your API key
-    const radius = 20000; // Search within 5 km
-    const type = "train_station"; // Search for railway stations
+    const apiKey = import.meta.env.VITE_GOMAPS_API_KEY; // Replace with your API key
+    const radius = 20000;
+    const type = "train_station";
 
     const url = `https://maps.gomaps.pro/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&type=${type}&key=${apiKey}`;
 
     try {
       const response = await fetch(url);
       const data = await response.json();
-      return data.results; // Returns an array of nearby railway stations
+      return data.results;
     } catch (error) {
       console.error("Error fetching nearby railway stations:", error);
       return [];
     }
   };
 
-  // Geocode the input location (convert address to lat/lng)
   const geocodeLocation = async (address) => {
     const geocoder = new google.maps.Geocoder();
     return new Promise((resolve, reject) => {
@@ -129,17 +217,13 @@ const Map = () => {
     });
   };
 
-  // Find the nearest railway station and display it on the map
-  const findNearestStation = async () => {
-    const locationInput = destinationRef.current.value.trim();
+  const findNearestStation = async (loc) => {
+    const locationInput = loc.current.value.trim();
     if (!locationInput) return;
 
     try {
-      // Geocode the input location
       const location = await geocodeLocation(locationInput);
-      console.log("Geocoded location:", location);
-
-      // Fetch nearby railway stations
+      console.log("Location:", location.lat(), location.lng());
       const stations = await fetchNearbyRailwayStations({
         lat: location.lat(),
         lng: location.lng(),
@@ -150,53 +234,23 @@ const Map = () => {
         return;
       }
 
-      // Use the first railway station found (nearest one)
-      console.log("Nearby railway stations:", stations);
       const nearestStation = stations[0];
-      setNearestStation(nearestStation);
 
-      // Place a marker at the nearest station
-      if (map) {
-        new google.maps.Marker({
-          position: {
-            lat: nearestStation.geometry.location.lat,
-            lng: nearestStation.geometry.location.lng,
-          },
-          map,
-        });
-      }
+      return nearestStation.name;
     } catch (error) {
       console.error("Error finding nearest station:", error);
     }
   };
+
   return (
     <Flex
       position="relative"
       h="100vh"
-      w="50vw" // Sets width to half of viewport, adjust as needed
-      ml="auto" // Aligns to the right side of the page
+      w="70vw"
+      ml="auto"
       flexDirection="column"
       alignItems="center"
     >
-      <Box position="absolute" top={0} left={0} h="100%" w="100%">
-        <GoogleMap
-          center={center}
-          zoom={15}
-          mapContainerStyle={{ width: "100%", height: "100%" }}
-          options={{
-            zoomControl: false,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-          }}
-          onLoad={(map) => setMap(map)}
-        >
-          {directionsResponse && (
-            <DirectionsRenderer directions={directionsResponse} />
-          )}
-        </GoogleMap>
-      </Box>
-
       <Box
         p={4}
         borderRadius="lg"
@@ -233,21 +287,24 @@ const Map = () => {
             />
           </ButtonGroup>
         </HStack>
-        <HStack spacing={4} mt={4} justifyContent="space-between">
-          <Text>Distance: {distance} </Text>
-          <Text>Duration: {duration} </Text>
-          <Text>Nearest: {nearestStation?.name} </Text>
-
-          <IconButton
-            aria-label="center map"
-            icon={<FaLocationArrow />}
-            isRound
-            onClick={() => {
-              map.panTo(center);
-              map.setZoom(15);
-            }}
-          />
-        </HStack>
+      </Box>
+      <Box h="100%" w="100%">
+        <GoogleMap
+          center={center}
+          zoom={15}
+          mapContainerStyle={{ width: "100%", height: "100%" }}
+          options={{
+            zoomControl: false,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+          }}
+          onLoad={(map) => setMap(map)}
+        >
+          {directionsResponse && (
+            <DirectionsRenderer directions={directionsResponse} />
+          )}
+        </GoogleMap>
       </Box>
     </Flex>
   );

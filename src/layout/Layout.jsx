@@ -5,7 +5,7 @@ import React from "react";
 const Layout = ({ children }) => {
   return (
     <div className="flex flex-col justify-between min-h-screen">
-      {/* <Header /> */}
+      <Header />
       {children}
       <Footer />
     </div>

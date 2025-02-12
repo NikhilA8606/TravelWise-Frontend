@@ -22,8 +22,8 @@ const formSchema = z.object({
     message: "Username must be at least 2 characters.",
   }),
 
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
+  password: z.string().min(2, {
+    message: "Password must be at least 2 characters.",
   }),
 })
 
@@ -44,16 +44,16 @@ const Sign = () => {
 
     try {
       // Make the API request to authenticate
-      const response = await axios.post("http://127.0.0.1:8000/api/sign/", {
-        username,
-        password,
-      })
+      // const response = await axios.post("http://127.0.0.1:8000/api/sign/", {
+      //   username,
+      //   password,
+      // })
 
       // Handle successful login
-      if (response.status === 200) {
-        console.log("Login successful:", response.data)
+      if (username === "admin" && password === "admin") {
+        // console.log("Login successful:", response.data)
         // Store token or any required data (optional)
-        localStorage.setItem("authToken", response.data.token)
+        // localStorage.setItem("authToken", response.data.token)
         navigate("/admin") // Redirect to map page on successful login
       }
     } catch (error) {
