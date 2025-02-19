@@ -16,8 +16,6 @@ import axios from "axios";
 import { useState } from "react";
 import Directroute from "./Directroute";
 
-
-
 const options = [
   {
     type: "Train",
@@ -26,7 +24,13 @@ const options = [
     label: "BEST",
   },
   {
-    type: "Bus",
+    type: "Private Bus",
+    icon: <FaBus className="text-orange-600 text-2xl" />,
+    price: "",
+    label: "CHEAPEST",
+  },
+  {
+    type: "KSRTC Bus",
     icon: <FaBus className="text-orange-600 text-2xl" />,
     price: "",
     label: "CHEAPEST",
@@ -35,7 +39,7 @@ const options = [
     type: "Taxi",
     icon: <FaTaxi className="text-yellow-500 text-2xl" />,
     price: "",
-    label: ""
+    label: "",
   },
   {
     type: "Drive",
@@ -55,6 +59,7 @@ const Details = () => {
     taxirate,
     bustime,
     driverate,
+    detailsLoading,
   } = useRoute();
   const [busdata, setBusdata] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -62,8 +67,8 @@ const Details = () => {
   const [prop, setProp] = useState({});
 
   options[1].price = `₹${busrate}`;
-  options[2].price = `₹${taxirate}`;
-  options[3].price = `₹${driverate}`;
+  options[3].price = `₹${taxirate}`;
+  options[4].price = `₹${driverate}`;
 
   const [ksrtcdata, setKsrtcdata] = useState([]);
   useEffect(() => {
@@ -77,7 +82,7 @@ const Details = () => {
         const response = await axios.get(
           `https://busapi.amithv.xyz/api/v1/schedules?departure=${sourceName}&destination=${destName}`
         );
-      
+
         console.log("ksrtcdata", ksrtcdata);
         setBusdata(response.data);
       } catch (err) {
@@ -90,12 +95,37 @@ const Details = () => {
     fetchBusData();
   }, [source, destination]);
 
-  console.log("busdata", busdata);
+  const filteredOptions = options.filter((option) => {
+    if (busdata?.length > 0 && ksrtcdata?.length > 0) {
+      return option.type !== "Train";
+    }
+    if (busdata?.length > 0) {
+      return option.type !== "KSRTC Bus" && option.type !== "Train";
+    }
+    if (!busdata?.length && !ksrtcdata?.length) {
+      return option.type !== "KSRTC Bus" && option.type !== "Private Bus";
+    }
+    if (!busdata?.length) {
+      return option.type !== "Private Bus";
+    }
+    return true;
+  });
 
-  const filteredOptions =
-    busdata?.length > 0
-      ? options.filter((option) => option.type !== "Train")
-      : options;
+  if (!source || !destination)
+    return (
+      <div className="space-y-4 p-3 w-full max-w-full flex items-center justify-center">
+        <h1 className="text-muted-foreground">
+          Enter the source and destination
+        </h1>
+      </div>
+    );
+
+  if (detailsLoading)
+    return (
+      <div className="space-y-4 p-3 w-full max-w-full flex items-center justify-center">
+        <Spinner size="xl" />
+      </div>
+    );
 
   return (
     <div className="space-y-4 p-3 w-full max-w-full">
@@ -113,7 +143,12 @@ const Details = () => {
                 <div className="mr-4">{option.icon}</div>
                 <div
                   onClick={() =>
-                    setProp({ way: option.type, rate: option.price })
+                    setProp({
+                      way: option.type,
+                      rate: option.price,
+                      source: source,
+                      destination: destination,
+                    })
                   }
                 >
                   <CardHeader className="p-0">
@@ -141,7 +176,15 @@ const Details = () => {
           Show More Options
         </Button>
         <SheetContent>
-          {busdata?.length > 0 ? <Directroute prop={prop} /> : <Navbar />}
+          {busdata?.length > 0 ? (
+            <Directroute prop={prop} />
+          ) : prop.way === "Train" ? (
+            <Navbar />
+          ) : ["Private Bus", "KSRTC Bus", "Taxi", "Drive"].includes(
+              prop.way
+            ) ? (
+            <Directroute prop={prop} />
+          ) : null}
         </SheetContent>
       </Sheet>
     </div>

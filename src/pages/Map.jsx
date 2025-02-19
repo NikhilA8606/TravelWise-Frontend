@@ -37,6 +37,7 @@ const Map = () => {
     setBusrate,
     setTaxirate,
     setDriverate,
+    setDetailsLoading,
   } = useRoute();
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOMAPS_API_KEY,
@@ -49,7 +50,6 @@ const Map = () => {
   const destinationRef = useRef();
   const markerRef = useRef(null);
 
-  
   useEffect(() => {
     if (isLoaded && map && !markerRef.current) {
       if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
@@ -83,45 +83,45 @@ const Map = () => {
     const MIN_FARE = 10;
     const BASE_DISTANCE = 2.5;
     const PER_KM_RATE = 1;
-  
+
     if (distanceInKm <= BASE_DISTANCE) {
       return MIN_FARE;
     }
-  
+
     const additionalDistance = distanceInKm - BASE_DISTANCE;
     const additionalFare = additionalDistance * PER_KM_RATE;
     const totalFare = MIN_FARE + additionalFare;
-  
+
     return Math.ceil(totalFare);
   }
-  
+
   function calculateTaxiFare(distanceInKm) {
     const MIN_FARE = 30;
     const BASE_DISTANCE = 1.5;
     const PER_KM_RATE = 15;
-  
+
     if (distanceInKm <= BASE_DISTANCE) {
       return MIN_FARE;
     }
-  
+
     const additionalDistance = distanceInKm - BASE_DISTANCE;
     const additionalFare = additionalDistance * PER_KM_RATE;
     const totalFare = MIN_FARE + additionalFare;
-  
+
     return Math.ceil(totalFare);
   }
 
   function calculateDriverRate(distanceInKm) {
-    const FUEL_PRICE_PER_LITER = 110; 
-    const AVERAGE_MILEAGE = 15; 
+    const FUEL_PRICE_PER_LITER = 110;
+    const AVERAGE_MILEAGE = 15;
 
     const fuelCost = (distanceInKm / AVERAGE_MILEAGE) * FUEL_PRICE_PER_LITER;
     return Math.ceil(fuelCost);
   }
 
-
   async function calculateRoute(retryCount = 3) {
     try {
+      setDetailsLoading(true);
       const origin = originRef.current.value.trim();
       const destination = destinationRef.current.value.trim();
       if (origin === "" || destination === "") return;
@@ -157,7 +157,6 @@ const Map = () => {
       const taxiFare = calculateTaxiFare(distanceValue);
       const driverFare = calculateDriverRate(distanceValue);
 
-
       setBusrate(busFare);
       setTaxirate(taxiFare);
       setDriverate(driverFare);
@@ -166,15 +165,19 @@ const Map = () => {
       console.log("busrate:", busFare);
       console.log("taxirate:", taxiFare);
       console.log("driverRate:", driverFare);
+      setDetailsLoading(false);
     } catch (error) {
       console.error("Directions request failed", error);
       if (retryCount > 0) {
         console.log(`Retrying... (${3 - retryCount + 1})`);
         calculateRoute(retryCount - 1);
       }
+      setDetailsLoading(false);
+    } finally {
+      setDetailsLoading(false);
     }
   }
-  
+
   function clearRoute() {
     setDirectionsResponse(null);
     setDistance("");

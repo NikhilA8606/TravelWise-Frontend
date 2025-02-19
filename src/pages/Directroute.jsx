@@ -1,5 +1,4 @@
 import React from "react";
-
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,22 +8,15 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Card } from "@/components/ui/card";
-import {
-  FaTrain,
-  FaBus,
-  FaTaxi,
-  FaLocationArrow,
-  FaBed,
-  FaArrowRight,
-} from "react-icons/fa";
+import { FaBus, FaBed, FaArrowRight } from "react-icons/fa";
 import { useRoute } from "../context/RouteContext";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Directroute = ({ prop: { way, rate } }) => {
+const Directroute = ({ prop: { way, rate, source, destination } }) => {
   const navigate = useNavigate();
-  const { destination, source, busrate, bustime, setBustime } = useRoute();
+  const { busrate, bustime, setBustime } = useRoute();
   const [busdata, setBusdata] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -55,7 +47,7 @@ const Directroute = ({ prop: { way, rate } }) => {
   }, [source, destination]);
 
   const handleCardClick = (source, destination) => {
-    if (source && destination) {
+    if (source && destination && way === "Private Bus") {
       navigate("/bus", {
         state: {
           start: source?.split(",")[0],
@@ -123,35 +115,25 @@ const Directroute = ({ prop: { way, rate } }) => {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-          busdata.length > 0 && (
-            <Card
-              className="p-4 mt-4 relative"
-              onClick={() => handleCardClick(source, destination)}
-            >
-              <div className="absolute left-5 top-9 bottom-8 w-0.5 bg-blue-500"></div>
-              <div className="flex items-center gap-2">
-                <FaBus className="text-blue-500 text-lg mb-7" />
-                <div className="ml-3">
-                  <h3 className="font-semibold">{source}</h3>
-                  <p className="text-sm text-gray-500">{source}, India</p>
-                </div>
+          <Card
+            className="p-4 mt-4 relative"
+            onClick={() => handleCardClick(source, destination)}
+          >
+            <div className="absolute left-5 top-9 bottom-8 w-0.5 bg-blue-500"></div>
+            <div className="flex items-center gap-2">
+              <FaBus className="text-blue-500 text-lg mb-7" />
+              <div className="ml-3">
+                <h3 className="font-semibold">{source}</h3>
+                <p className="text-sm text-gray-500">{source}, India</p>
               </div>
-              {busdata[0]?.stations && (
-                <p className="text-gray-700 mt-2 ml-9">
-                  {getArrivalAndReachingTime(
-                    busdata[0].stations,
-                    source?.split(",")[0],
-                    destination?.split(",")[0]
-                  )?.total_time || "Time unavailable"}
-                </p>
-              )}
-              <p className="text-gray-700 mt-2 ml-9">{rate}rs</p>
-              <div className="mt-4 ml-9">
-                <h3 className="font-semibold">{destination}</h3>
-                <p className="text-sm text-gray-500">{destination}, India</p>
-              </div>
-            </Card>
-          )
+            </div>
+
+            <p className="text-gray-700 mt-2 ml-9">{rate}rs</p>
+            <div className="mt-4 ml-9">
+              <h3 className="font-semibold">{destination}</h3>
+              <p className="text-sm text-gray-500">{destination}, India</p>
+            </div>
+          </Card>
         )}
 
         <Card className="p-2 mt-4 relative cursor-pointer">
@@ -166,7 +148,7 @@ const Directroute = ({ prop: { way, rate } }) => {
                   href={`https://www.booking.com/searchresults.html?ss=${destination}%2C+India`}
                 >
                   Find Hotels
-                </a>    
+                </a>
                 <FaArrowRight className="text-pink-500 ml-1 mt-1" />
               </button>
             </div>

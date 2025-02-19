@@ -26,16 +26,7 @@ const RouteCard = ({ from, to, duration, distance, isLast }) => (
     <p className="text-gray-700 mt-2 ml-9">
       {duration} • Train • {distance}
     </p>
-    <div className="flex gap-2 mt-2 ml-9">
-      {[16347, 16629, 16650].map((trainNo) => (
-        <span
-          key={trainNo}
-          className="bg-blue-500 text-white px-2 py-1 rounded-md text-sm"
-        >
-          {trainNo}
-        </span>
-      ))}
-    </div>
+
     <p className="text-gray-700 mt-2 ml-9">₹210–3,400</p>
     <div className="mt-4 ml-9">
       <h3 className="font-semibold">{to}</h3>

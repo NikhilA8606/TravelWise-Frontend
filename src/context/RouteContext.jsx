@@ -6,7 +6,7 @@ export const RouteProvider = ({ children }) => {
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
   const [busrate, setBusrate] = useState("");
-  const [taxirate, setTaxirate] = useState(""); 
+  const [taxirate, setTaxirate] = useState("");
   const [driverate, setDriverate] = useState("");
   const [bustime, setBustime] = useState("");
   const [nearestStation, setNearestStation] = useState({
@@ -16,6 +16,7 @@ export const RouteProvider = ({ children }) => {
   const [intermediateStations, setIntermediateStations] = useState(false);
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   return (
     <RouteContext.Provider
@@ -40,6 +41,8 @@ export const RouteProvider = ({ children }) => {
         setDestination,
         intermediateStations,
         setIntermediateStations,
+        detailsLoading,
+        setDetailsLoading,
       }}
     >
       {children}
