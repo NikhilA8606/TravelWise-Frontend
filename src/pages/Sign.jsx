@@ -11,19 +11,17 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@components/ui/input"
-import { Card } from "@chakra-ui/react"
-import { CardTitle } from "@components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom"
-import axios from "axios" // Import Axios
+import axios from "axios"
 import SignIn from "../assets/SigninFrame.png"
 
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
   }),
-
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
+  password: z.string().min(2, {
+    message: "Password must be at least 2 characters.",
   }),
 })
 
@@ -36,80 +34,74 @@ const Sign = () => {
     },
   })
 
-  const navigate = useNavigate() // Used for redirecting after successful login
+  const navigate = useNavigate()
 
-  // Submit handler for the form
   const onSubmit = async data => {
-    const { username, password } = data
-
     try {
-      // Make the API request to authenticate
-      const response = await axios.post("http://127.0.0.1:8000/api/sign/", {
-        username,
-        password,
+      const response = await axios.post("http://127.0.0.1:8000/api/token/", {
+        username: data.username,
+        password: data.password,
       })
+      console.log(response)
 
-      // Handle successful login
       if (response.status === 200) {
-        console.log("Login successful:", response.data)
-        // Store token or any required data (optional)
-        localStorage.setItem("authToken", response.data.token)
-        navigate("/admin") // Redirect to map page on successful login
+        localStorage.setItem("authToken", response.data.access) // Store token
+        localStorage.setItem("refreshToken", response.data.refresh) // Store refresh token
+        navigate("/admin") // Redirect to admin dashboard
       }
     } catch (error) {
-      // Handle login error
-      console.error("Login failed:", error)
-      alert("Invalid username or password. Please try again.")
+      console.error("Login failed:", error.response?.data || error.message)
+      alert(error.response?.data?.detail || "Invalid username or password.")
     }
   }
 
   return (
-    <div className="flex justify-evenly items-center w-full ">
-      <img src={SignIn} alt="" className="w-[500px]" />
+    <div className="flex justify-evenly items-center w-full">
+      <img src={SignIn} alt="Sign In" className="w-[500px]" />
       <Card className="p-10 w-[400px]">
-        <CardTitle className="text-center mb-4">Sign In</CardTitle>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your username" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button className="mt-4" type="submit">
-              Login
-            </Button>
-          </form>
-        </Form>
+        <CardContent>
+          <h2 className="text-center text-xl font-semibold mb-4">Sign In</h2>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter your password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button className="w-full" type="submit">
+                Login
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
       </Card>
     </div>
   )
 }
 
 export default Sign
-
-

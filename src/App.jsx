@@ -1,19 +1,19 @@
-import { Route, Routes } from "react-router-dom";
-import Map from "./pages/Map";
-import Details from "@pages/Details";
-import Sign from "@pages/Sign";
-import Admin from "@pages/Admin";
-import PrivateBus from "@pages/TripDetails/PrivateBus";
-import PrivateBusRoute from "@pages/Route/PrivateBusRoute";
-import IndianRailway from "@pages/TripDetails/IndianRailway";
-import TrainRoute from "@pages/Route/TrainRoute";
-import Hotels from "@pages/Hotels";
-import { useState } from "react";
+import { Route, Routes } from "react-router-dom"
+import Map from "./pages/Map"
+import Details from "@pages/Details"
+import Sign from "@pages/Sign"
+import Admin from "@pages/Admin/Admin"
+import PrivateBus from "@pages/TripDetails/PrivateBus"
+import PrivateBusRoute from "@pages/Route/PrivateBusRoute"
+import IndianRailway from "@pages/TripDetails/IndianRailway"
+import TrainRoute from "@pages/Route/TrainRoute"
+import Hotels from "@pages/Hotels"
+import { useState } from "react"
 
 function App() {
-  const [distance, setDistance] = useState("");
-  const [duration, setDuration] = useState("");
-  const [nearestStation, setNearestStation] = useState(null);
+  const [distance, setDistance] = useState("")
+  const [duration, setDuration] = useState("")
+  const [nearestStation, setNearestStation] = useState(null)
 
   return (
     <div>
@@ -47,7 +47,7 @@ function App() {
         <Route path="/hotels" element={<Hotels />} />
       </Routes>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
