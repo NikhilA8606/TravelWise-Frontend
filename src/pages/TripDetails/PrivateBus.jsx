@@ -1,79 +1,85 @@
-import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 const PrivateBus = () => {
-  const [source, setSource] = useState("")
-  const [destination, setDestination] = useState("")
-  const [busdata, setBusdata] = useState([])
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false) // For loader
-  const navigate = useNavigate()
+  const [busdata, setBusdata] = useState([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // For loader
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { start, end } = location.state || {};
 
-  const parseTime = timeStr => {
-    const [time, modifier] = timeStr.split(" ")
-    let [hours, minutes] = time.split(":").map(Number)
+  const [source, setSource] = useState(start || ""); 
+  const [destination, setDestination] = useState(end || "");
+
+  console.log(start, end);
+  const parseTime = (timeStr) => {
+    const [time, modifier] = timeStr.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
     if (modifier.toLowerCase() === "pm" && hours !== 12) {
-      hours += 12
+      hours += 12;
     }
     if (modifier.toLowerCase() === "am" && hours === 12) {
-      hours = 0
+      hours = 0;
     }
-    return hours * 60 + minutes
-  }
+    return hours * 60 + minutes;
+  };
 
   const getArrivalAndReachingTime = (stations, source, destination) => {
     const sourceStation = stations.find(
-      station => station.station === source.toUpperCase()
-    )
+      (station) => station.station === source.toUpperCase()
+    );
     const destinationStation = stations.find(
-      station => station.station === destination.toUpperCase()
-    )
+      (station) => station.station === destination.toUpperCase()
+    );
 
     if (sourceStation && destinationStation) {
-      const sourceTimeInMinutes = parseTime(sourceStation.arrivalTime)
-      const destinationTimeInMinutes = parseTime(destinationStation.arrivalTime)
-      const totalTimeInMinutes = destinationTimeInMinutes - sourceTimeInMinutes
+      const sourceTimeInMinutes = parseTime(sourceStation.arrivalTime);
+      const destinationTimeInMinutes = parseTime(
+        destinationStation.arrivalTime
+      );
+      const totalTimeInMinutes = destinationTimeInMinutes - sourceTimeInMinutes;
 
-      const hours = Math.floor(totalTimeInMinutes / 60)
-      const minutes = totalTimeInMinutes % 60
+      const hours = Math.floor(totalTimeInMinutes / 60);
+      const minutes = totalTimeInMinutes % 60;
 
       return {
         arrival_time: sourceStation.arrivalTime,
         destination_time: destinationStation.arrivalTime,
         total_time: `${hours} hrs ${minutes} mins`,
-      }
+      };
     }
-    return null
-  }
+    return null;
+  };
 
-  const handleSubmit = async e => {
-    e.preventDefault()
-    setError("")
-    setLoading(true) // Start loader
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true); // Start loader
     try {
       const { data } = await axios.get(
         `https://busapi.amithv.xyz/api/v1/schedules?departure=${source}&destination=${destination}`
-      )
-      setBusdata(data || [])
+      );
+      setBusdata(data || []);
     } catch {
       setError(
         "Failed to fetch bus data. Please check your input and try again."
-      )
+      );
     } finally {
-      setLoading(false) // Stop loader
+      setLoading(false); // Stop loader
     }
-  }
+  };
 
-  const handleCardClick = bus => {
+  const handleCardClick = (bus) => {
     if (bus && bus.stations) {
       navigate("/privatebusroute", {
         state: { bus, stations: bus.stations },
-      })
+      });
     } else {
-      setError("No station data available for the selected bus.")
+      setError("No station data available for the selected bus.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4">
@@ -95,7 +101,7 @@ const PrivateBus = () => {
             type="text"
             id="source"
             value={source}
-            onChange={e => setSource(e.target.value)}
+            onChange={(e) => setSource(e.target.value)}
             className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
             placeholder="Enter source station"
             required
@@ -112,7 +118,7 @@ const PrivateBus = () => {
             type="text"
             id="destination"
             value={destination}
-            onChange={e => setDestination(e.target.value)}
+            onChange={(e) => setDestination(e.target.value)}
             className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
             placeholder="Enter destination station"
             required
@@ -141,7 +147,7 @@ const PrivateBus = () => {
               bus.stations,
               source,
               destination
-            )
+            );
 
             return times ? (
               <div
@@ -162,12 +168,12 @@ const PrivateBus = () => {
                   <strong>Total Time:</strong> {times.total_time}
                 </p>
               </div>
-            ) : null
+            ) : null;
           })}
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default PrivateBus
+export default PrivateBus;
