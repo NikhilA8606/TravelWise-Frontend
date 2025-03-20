@@ -24,7 +24,6 @@ const Directroute = ({
   const [error, setError] = useState(null);
   const [firstStation, setFirstStation] = useState(null);
 
-  console.log("heyyeye:", routeData);
   useEffect(() => {
     const fetchBusData = async () => {
       if (!source || !destination) return;
