@@ -19,13 +19,11 @@ const transportOptions = {
     type: "Train",
     icon: <FaTrain className="text-purple-700 text-2xl" />,
     price: "₹130–800",
-    label: "BEST",
   },
   private_bus: {
     type: "Private Bus",
     icon: <FaBus className="text-orange-600 text-2xl" />,
     price: "",
-    label: "CHEAPEST",
   },
   taxi: {
     type: "Taxi",
@@ -168,14 +166,12 @@ const Details = () => {
             ))}
           </div>
         </SheetTrigger>
-        <Button variant="outline" className="w-full mt-4">
-          Show More Options
-        </Button>
         <SheetContent>
           {routeData && routeData?.route_type.includes("train") ? (
             <Navbar prop={prop} />
-          ) : routeData?.route_type.length === 1 &&
-            routeData?.route_type[0] === "private_bus" ? (
+          ) : (routeData?.route_type.length === 1 &&
+              routeData?.route_type[0] === "private_bus") ||
+            "ksrtc_bus" ? (
             <Directroute prop={prop} />
           ) : null}
         </SheetContent>
