@@ -30,14 +30,40 @@ const Sign = () => {
 
   const onSubmit = async data => {
     try {
-      const response = await axios.post(
+      // First, authenticate to get the tokens
+      const tokenResponse = await axios.post(
         "http://127.0.0.1:9000/api/token/",
         data
       )
-      if (response.status === 200) {
-        const { access, refresh } = response.data
+
+      if (tokenResponse.status === 200) {
+        const { access, refresh } = tokenResponse.data
         localStorage.setItem("accessToken", access)
         localStorage.setItem("refreshToken", refresh)
+
+        // Now fetch the user details to get the user ID using the correct endpoint
+        try {
+          const userResponse = await axios.get(
+            "http://127.0.0.1:9000/api/v1/user/me",
+            {
+              headers: {
+                Authorization: `Bearer ${access}`,
+              },
+            }
+          )
+
+          // Store the user ID in localStorage
+          if (userResponse.status === 200) {
+            const userData = userResponse.data
+            console.log("User details:", userData)
+            localStorage.setItem("userId", userData.id)
+            console.log("User ID stored:", userData.id)
+          }
+        } catch (userError) {
+          console.error("Failed to fetch user details:", userError)
+          // We can still proceed even if this fails
+        }
+
         navigate("/admin")
       }
     } catch (error) {

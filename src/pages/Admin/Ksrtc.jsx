@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import API from "../../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react"
+import API from "../../lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -10,37 +10,37 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Pencil, Trash, Plus } from "lucide-react";
+} from "@/components/ui/table"
+import { Pencil, Trash, Plus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 
 const KsrtcTrips = () => {
-  const [trips, setTrips] = useState([]);
-  const [openModal, setOpenModal] = useState(false);
+  const [trips, setTrips] = useState([])
+  const [openModal, setOpenModal] = useState(false)
   const [tripData, setTripData] = useState({
     vehicle_number: "",
     trip: "",
     stations: [],
-  });
-  const [editMode, setEditMode] = useState(false);
+  })
+  const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
-    fetchTrips();
-  }, []);
+    fetchTrips()
+  }, [])
 
   const fetchTrips = async () => {
     try {
-      const response = await API.get("/ksrtc/");
-      setTrips(response.data);
+      const response = await API.get("/ksrtc/")
+      setTrips(response.data)
     } catch (error) {
-      console.error("Error fetching trips:", error);
+      console.error("Error fetching trips:", error)
     }
-  };
+  }
 
   const handleAddStation = () => {
     setTripData({
@@ -49,37 +49,50 @@ const KsrtcTrips = () => {
         ...tripData.stations,
         { station: "", arrivalTime: "", departureTime: "" },
       ],
-    });
-  };
+    })
+  }
 
   const handleStationChange = (index, field, value) => {
     const updatedStations = tripData.stations.map((station, i) =>
       i === index ? { ...station, [field]: value } : station
-    );
-    setTripData({ ...tripData, stations: updatedStations });
-  };
+    )
+    setTripData({ ...tripData, stations: updatedStations })
+  }
 
-  const handleDeleteStation = (index) => {
-    const updatedStations = tripData.stations.filter((_, i) => i !== index);
-    setTripData({ ...tripData, stations: updatedStations });
-  };
+  const handleDeleteStation = index => {
+    const updatedStations = tripData.stations.filter((_, i) => i !== index)
+    setTripData({ ...tripData, stations: updatedStations })
+  }
 
   const handleAddOrEditTrip = async () => {
     try {
       if (editMode) {
-        await API.put(`/ksrtc/${tripData.id}/`, tripData);
+        await API.put(`/ksrtc/${tripData.id}/`, tripData)
       } else {
-        await API.post("/ksrtc/", tripData);
-      }
-      fetchTrips();
-      setOpenModal(false);
-      setTripData({ vehicle_number: "", trip: "", stations: [] });
-      setEditMode(false);
-    } catch (error) {
-      console.error("Error saving trip:", error);
-    }
-  };
+        // Get the user ID from localStorage
+        const userId = localStorage.getItem("userId")
+        if (!userId) {
+          throw new Error("User ID not found. Please log in again.")
+        }
 
+        // Include the user ID in the trip data
+        const tripDataWithUser = {
+          ...tripData,
+          user: userId,
+        }
+
+        await API.post("/ksrtc/", tripDataWithUser)
+      }
+
+      fetchTrips()
+      setOpenModal(false)
+      setTripData({ vehicle_number: "", trip: "", stations: [] })
+      setEditMode(false)
+    } catch (error) {
+      console.error("Error saving trip:", error)
+      // You might want to show an error message to the user
+    }
+  }
   return (
     <Card>
       <CardHeader>
@@ -90,9 +103,9 @@ const KsrtcTrips = () => {
           <Button
             variant="outline"
             onClick={() => {
-              setOpenModal(true);
-              setEditMode(false);
-              setTripData({ vehicle_number: "", trip: "", stations: [] });
+              setOpenModal(true)
+              setEditMode(false)
+              setTripData({ vehicle_number: "", trip: "", stations: [] })
             }}
           >
             <Plus className="h-4 w-4 mr-2" /> Add Trip
@@ -112,7 +125,7 @@ const KsrtcTrips = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {trips.map((trip) =>
+            {trips.map(trip =>
               trip.stations.map((station, index) => (
                 <TableRow key={`${trip.id}-${index}`}>
                   {index === 0 && (
@@ -137,9 +150,9 @@ const KsrtcTrips = () => {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setTripData(trip);
-                          setOpenModal(true);
-                          setEditMode(true);
+                          setTripData(trip)
+                          setOpenModal(true)
+                          setEditMode(true)
                         }}
                       >
                         <Pencil className="h-4 w-4" />
@@ -164,35 +177,35 @@ const KsrtcTrips = () => {
           <Input
             placeholder="Vehicle Number"
             value={tripData.vehicle_number}
-            onChange={(e) =>
+            onChange={e =>
               setTripData({ ...tripData, vehicle_number: e.target.value })
             }
           />
           <Input
             placeholder="Trip"
             value={tripData.trip}
-            onChange={(e) => setTripData({ ...tripData, trip: e.target.value })}
+            onChange={e => setTripData({ ...tripData, trip: e.target.value })}
           />
           {tripData.stations.map((station, index) => (
             <div key={index} className="flex gap-2 items-center">
               <Input
                 placeholder="Station Name"
                 value={station.station}
-                onChange={(e) =>
+                onChange={e =>
                   handleStationChange(index, "station", e.target.value)
                 }
               />
               <Input
                 placeholder="Arrival Time"
                 value={station.arrivalTime}
-                onChange={(e) =>
+                onChange={e =>
                   handleStationChange(index, "arrivalTime", e.target.value)
                 }
               />
               <Input
                 placeholder="Departure Time"
                 value={station.departureTime}
-                onChange={(e) =>
+                onChange={e =>
                   handleStationChange(index, "departureTime", e.target.value)
                 }
               />
@@ -214,7 +227,7 @@ const KsrtcTrips = () => {
         </DialogContent>
       </Dialog>
     </Card>
-  );
-};
+  )
+}
 
-export default KsrtcTrips;
+export default KsrtcTrips
