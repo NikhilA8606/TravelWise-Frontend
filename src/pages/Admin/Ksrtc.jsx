@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import API from "../../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react"
+import API from "../../lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -10,62 +10,62 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Pencil, Trash, Plus } from "lucide-react";
+} from "@/components/ui/table"
+import { Trash } from "lucide-react"
 
 const KsrtcTrips = () => {
-  const [trips, setTrips] = useState([]);
-  const [filteredTrips, setFilteredTrips] = useState([]);
-  const [source, setSource] = useState("");
-  const [destination, setDestination] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [trips, setTrips] = useState([])
+  const [filteredTrips, setFilteredTrips] = useState([])
+  const [source, setSource] = useState("")
+  const [destination, setDestination] = useState("")
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetchTrips();
-  }, []);
+    fetchTrips()
+  }, [])
 
   const fetchTrips = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await API.get("/ksrtc/");
-      setTrips(response.data);
-      setFilteredTrips(response.data);
+      const response = await API.get("/ksrtc/")
+      setTrips(response.data)
+      setFilteredTrips(response.data)
     } catch (error) {
-      console.error("Error fetching trips:", error);
+      console.error("Error fetching trips:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  console.log("ksrtc data: ", trips);
+  console.log("ksrtc data: ", trips)
 
   const handleSearch = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await API.get("/ksrtc/", {
         params: { source, destination },
-      });
-      setFilteredTrips(response.data);
+      })
+      setFilteredTrips(response.data)
     } catch (error) {
-      console.error("Error filtering trips:", error);
+      console.error("Error filtering trips:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this trip?")) return;
-    setLoading(true);
+  const handleDelete = async id => {
+    if (!confirm("Are you sure you want to delete this trip?")) return
+    setLoading(true)
     try {
-      await API.delete(`/ksrtc/${id}/`);
-      setTrips((prev) => prev.filter((trip) => trip.id !== id));
-      setFilteredTrips((prev) => prev.filter((trip) => trip.id !== id));
+      await API.delete(`/ksrtc/${id}/`)
+      setTrips(prev => prev.filter(trip => trip.id !== id))
+      setFilteredTrips(prev => prev.filter(trip => trip.id !== id))
     } catch (error) {
-      console.error("Error deleting trip:", error);
+      console.error("Error deleting trip:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <Card>
@@ -85,13 +85,13 @@ const KsrtcTrips = () => {
             type="text"
             placeholder="Source"
             value={source}
-            onChange={(e) => setSource(e.target.value)}
+            onChange={e => setSource(e.target.value)}
           />
           <Input
             type="text"
             placeholder="Destination"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={e => setDestination(e.target.value)}
           />
           <Button onClick={handleSearch} disabled={loading}>
             {loading ? "Searching..." : "Search"}
@@ -110,7 +110,7 @@ const KsrtcTrips = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTrips.map((trip) =>
+            {filteredTrips.map(trip =>
               trip.stations.map((station, index) => (
                 <TableRow key={`${trip.id}-${index}`}>
                   {index === 0 && (
@@ -150,7 +150,7 @@ const KsrtcTrips = () => {
         </Table>
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default KsrtcTrips;
+export default KsrtcTrips
