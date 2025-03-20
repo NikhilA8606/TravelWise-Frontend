@@ -1,5 +1,4 @@
 import { Button } from "@components/ui/button";
-import Navbar from "./Navbar";
 import {
   Card,
   CardHeader,
@@ -8,108 +7,83 @@ import {
   CardFooter,
 } from "@components/ui/card";
 import { Flex, Spinner } from "@chakra-ui/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaTrain, FaBus, FaTaxi, FaCar } from "react-icons/fa";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useRoute } from "../context/RouteContext";
-import axios from "axios";
-import { useState } from "react";
+import Navbar from "../pages/Navbar";
 import Directroute from "./Directroute";
 
-const options = [
-  {
+const transportOptions = {
+  train: {
     type: "Train",
     icon: <FaTrain className="text-purple-700 text-2xl" />,
     price: "₹130–800",
     label: "BEST",
   },
-  {
+  private_bus: {
     type: "Private Bus",
     icon: <FaBus className="text-orange-600 text-2xl" />,
     price: "",
     label: "CHEAPEST",
   },
-  {
-    type: "KSRTC Bus",
-    icon: <FaBus className="text-orange-600 text-2xl" />,
-    price: "",
-    label: "CHEAPEST",
-  },
-  {
+  taxi: {
     type: "Taxi",
     icon: <FaTaxi className="text-yellow-500 text-2xl" />,
     price: "",
     label: "",
   },
-  {
+  drive: {
     type: "Drive",
     icon: <FaCar className="text-gray-600 text-2xl" />,
     price: "",
     label: "",
   },
-];
+};
 
 const Details = () => {
   const {
     destination,
     source,
-    distance,
     duration,
     busrate,
+    ksrtcrate,
     taxirate,
-    bustime,
     driverate,
     detailsLoading,
   } = useRoute();
-  const [busdata, setBusdata] = useState([]);
+  const [routeData, setRouteData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [prop, setProp] = useState({});
 
-  options[1].price = `₹${busrate}`;
-  options[3].price = `₹${taxirate}`;
-  options[4].price = `₹${driverate}`;
-
-  const [ksrtcdata, setKsrtcdata] = useState([]);
   useEffect(() => {
-    const fetchBusData = async () => {
+    const fetchRouteData = async () => {
       if (!source || !destination) return;
       setLoading(true);
       setError(null);
       try {
-        const sourceName = source.split(",")[0].toLowerCase().trim();
-        const destName = destination.split(",")[0].toLowerCase().trim();
-        const response = await axios.get(
-          `https://busapi.amithv.xyz/api/v1/schedules?departure=${sourceName}&destination=${destName}`
+        const response = await fetch(
+          `http://127.0.0.1:8000/best-route/?start=${source}&end=${destination}`
         );
-
-        console.log("ksrtcdata", ksrtcdata);
-        setBusdata(response.data);
+        if (!response.ok) throw new Error("Failed to fetch");
+        const data = await response.json();
+        console.log("Details:", data.route_type);
+        setRouteData(data);
       } catch (err) {
-        setBusdata(null);
-        console.error("Error fetching bus schedules:", err);
+        setError("Failed to fetch route data. Please try again.");
+        console.error("Error fetching route data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchBusData();
+
+    fetchRouteData();
   }, [source, destination]);
 
-  const filteredOptions = options.filter((option) => {
-    if (busdata?.length > 0 && ksrtcdata?.length > 0) {
-      return option.type !== "Train";
-    }
-    if (busdata?.length > 0) {
-      return option.type !== "KSRTC Bus" && option.type !== "Train";
-    }
-    if (!busdata?.length && !ksrtcdata?.length) {
-      return option.type !== "KSRTC Bus" && option.type !== "Private Bus";
-    }
-    if (!busdata?.length) {
-      return option.type !== "Private Bus";
-    }
-    return true;
-  });
+  transportOptions.taxi.price = `₹${taxirate}`;
+  transportOptions.drive.price = `₹${driverate}`;
+  transportOptions.private_bus.price = `₹${busrate}`;
 
   if (!source || !destination)
     return (
@@ -120,12 +94,33 @@ const Details = () => {
       </div>
     );
 
-  if (detailsLoading)
+  if (detailsLoading || loading)
     return (
       <div className="space-y-4 p-3 w-full max-w-full flex items-center justify-center">
         <Spinner size="xl" />
       </div>
     );
+
+  if (error)
+    return (
+      <div className="space-y-4 p-3 w-full max-w-full flex items-center justify-center">
+        <h1 className="text-muted-foreground">{error}</h1>
+      </div>
+    );
+
+  // Determine which cards to show based on route_type
+  const selectedCards = [];
+  if (routeData?.route_type.includes("train")) {
+    selectedCards.push(transportOptions.train);
+  }
+  if (
+    routeData?.route_type.length === 1 &&
+    routeData?.route_type[0] === "private_bus"
+  ) {
+    selectedCards.push(transportOptions.private_bus);
+  }
+  selectedCards.push(transportOptions.taxi);
+  selectedCards.push(transportOptions.drive); // Drive card is always shown
 
   return (
     <div className="space-y-4 p-3 w-full max-w-full">
@@ -135,7 +130,7 @@ const Details = () => {
       <Sheet>
         <SheetTrigger className="block w-full">
           <div className="space-y-4">
-            {filteredOptions.map((option, index) => (
+            {selectedCards.map((option, index) => (
               <Card
                 key={index}
                 className="p-3 w-full flex items-center rounded-xl shadow-sm border"
@@ -148,6 +143,7 @@ const Details = () => {
                       rate: option.price,
                       source: source,
                       destination: destination,
+                      routeData: routeData,
                     })
                   }
                 >
@@ -176,13 +172,10 @@ const Details = () => {
           Show More Options
         </Button>
         <SheetContent>
-          {busdata?.length > 0 ? (
-            <Directroute prop={prop} />
-          ) : prop.way === "Train" ? (
-            <Navbar />
-          ) : ["Private Bus", "KSRTC Bus", "Taxi", "Drive"].includes(
-              prop.way
-            ) ? (
+          {routeData && routeData?.route_type.includes("train") ? (
+            <Navbar prop={prop} />
+          ) : routeData?.route_type.length === 1 &&
+            routeData?.route_type[0] === "private_bus" ? (
             <Directroute prop={prop} />
           ) : null}
         </SheetContent>

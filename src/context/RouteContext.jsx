@@ -8,6 +8,7 @@ export const RouteProvider = ({ children }) => {
   const [busrate, setBusrate] = useState("");
   const [taxirate, setTaxirate] = useState("");
   const [driverate, setDriverate] = useState("");
+  const [ksrtcrate, setKsrtcrate] = useState("");
   const [bustime, setBustime] = useState("");
   const [nearestStation, setNearestStation] = useState({
     origin: null,
@@ -31,6 +32,8 @@ export const RouteProvider = ({ children }) => {
         setBusrate,
         taxirate,
         setTaxirate,
+        ksrtcrate,
+        setKsrtcrate,
         driverate,
         setDriverate,
         nearestStation,

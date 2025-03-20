@@ -18,25 +18,22 @@ import {
 } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import { useRoute } from "@/context/RouteContext";
+import { set } from "react-hook-form";
+import axios from "axios";
 
-const center = { lat: 48.8584, lng: 2.2945 }
-const libraries = ["places"]
+const center = { lat: 48.8584, lng: 2.2945 };
+const libraries = ["places"];
 
 const Map = () => {
   const {
     setDistance,
     setDuration,
-    setNearestStation,
-    distance,
-    duration,
-    nearestStation,
     setSource,
     setDestination,
-    intermediateStations,
-    setIntermediateStations,
     setBusrate,
     setTaxirate,
     setDriverate,
+    setKsrtcrate,
     setDetailsLoading,
   } = useRoute();
   const { isLoaded } = useJsApiLoader({
@@ -46,9 +43,9 @@ const Map = () => {
   const [map, setMap] = useState(null);
   const [directionsResponse, setDirectionsResponse] = useState(null);
 
-  const originRef = useRef()
-  const destinationRef = useRef()
-  const markerRef = useRef(null)
+  const originRef = useRef();
+  const destinationRef = useRef();
+  const markerRef = useRef(null);
 
   useEffect(() => {
     if (isLoaded && map && !markerRef.current) {
@@ -57,19 +54,19 @@ const Map = () => {
           map,
           position: center,
           title: "Default Location",
-        })
+        });
       } else {
         markerRef.current = new google.maps.Marker({
           map,
           position: center,
           title: "Default Location",
-        })
+        });
         console.warn(
           "Falling back to google.maps.Marker as AdvancedMarkerElement is unavailable."
-        )
+        );
       }
     }
-  }, [isLoaded, map])
+  }, [isLoaded, map]);
 
   if (!isLoaded) {
     return (
@@ -77,6 +74,17 @@ const Map = () => {
         <Spinner size="xl" thickness="4px" color="pink.500" />
       </Flex>
     );
+  }
+
+  function calculateKsrtcFare(distance) {
+    const minFare = 15; // Minimum fare for the service
+    const minDistance = 3.75; // Minimum distance covered by the base fare
+    const perKmRate = 1; // Per kilometer rate in rupees (100 paise = ₹1)
+
+    if (distance <= minDistance) return minFare;
+
+    const additionalFare = Math.round((distance - minDistance) * perKmRate);
+    return minFare + additionalFare;
   }
 
   function calculateBusFare(distanceInKm) {
@@ -126,17 +134,13 @@ const Map = () => {
       const destination = destinationRef.current.value.trim();
       if (origin === "" || destination === "") return;
 
-      setSource(origin);
-      setDestination(destination);
-      nearestStation.origin = await findNearestStation(originRef);
-      nearestStation.destination = await findNearestStation(destinationRef);
-
-      if (
-        !origin.includes(nearestStation.origin) &&
-        !destination.includes(nearestStation.destination)
-      ) {
-        setIntermediateStations(true);
-      }
+      console.log("Fetching best route...");
+      const response = await fetch(
+        `http://127.0.0.1:8000/best-route/?start=${origin}&end=${destination}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch");
+      const data = await response.json();
+      console.log("Route:", data);
 
       const directionsService = new google.maps.DirectionsService();
       const results = await directionsService.route({
@@ -145,32 +149,36 @@ const Map = () => {
         travelMode: google.maps.TravelMode.DRIVING,
       });
 
-      setDirectionsResponse(results);
+      const distanceValue = parseFloat(results.routes[0].legs[0].distance.text);
       setDistance(results.routes[0].legs[0].distance.text);
       setDuration(results.routes[0].legs[0].duration.text);
+      setDirectionsResponse(results);
 
-      // Extract numerical distance value from the string (e.g., "10 km" => 10)
-      const distanceValue = parseFloat(results.routes[0].legs[0].distance.text);
+      setSource(origin);
+      setDestination(destination);
 
       // Calculate and set bus and taxi fares
       const busFare = calculateBusFare(distanceValue);
       const taxiFare = calculateTaxiFare(distanceValue);
       const driverFare = calculateDriverRate(distanceValue);
+      const ksrtcFare = calculateKsrtcFare(distanceValue);
 
       setBusrate(busFare);
       setTaxirate(taxiFare);
       setDriverate(driverFare);
+      setKsrtcrate(ksrtcFare);
 
       // Log the bus and taxi fares
       console.log("busrate:", busFare);
       console.log("taxirate:", taxiFare);
       console.log("driverRate:", driverFare);
+      console.log("ksrtcRate:", ksrtcFare);
       setDetailsLoading(false);
     } catch (error) {
-      console.error("Directions request failed", error)
+      console.error("Directions request failed", error);
       if (retryCount > 0) {
-        console.log(`Retrying... (${3 - retryCount + 1})`)
-        calculateRoute(retryCount - 1)
+        console.log(`Retrying... (${3 - retryCount + 1})`);
+        calculateRoute(retryCount - 1);
       }
       setDetailsLoading(false);
     } finally {
@@ -182,29 +190,12 @@ const Map = () => {
     setDirectionsResponse(null);
     setDistance("");
     setDuration("");
-    setNearestStation("");
     setBusrate("");
     setTaxirate("");
+    setKsrtcrate("");
     setDriverate("");
     originRef.current.value = "";
     destinationRef.current.value = "";
-  }
-
-  const fetchNearbyRailwayStations = async (location) => {
-    const apiKey = import.meta.env.VITE_GOMAPS_API_KEY; // Replace with your API key
-    const radius = 20000;
-    const type = "train_station";
-
-    const url = `https://maps.gomaps.pro/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&type=${type}&key=${apiKey}`
-
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      return data.results;
-    } catch (error) {
-      console.error("Error fetching nearby railway stations:", error)
-      return []
-    }
   }
 
   const geocodeLocation = async (address) => {
@@ -212,37 +203,12 @@ const Map = () => {
     return new Promise((resolve, reject) => {
       geocoder.geocode({ address }, (results, status) => {
         if (status === "OK" && results[0]) {
-          resolve(results[0].geometry.location)
+          resolve(results[0].geometry.location);
         } else {
-          reject(new Error("Geocoding failed"))
+          reject(new Error("Geocoding failed"));
         }
-      })
-    })
-  }
-
-  const findNearestStation = async (loc) => {
-    const locationInput = loc.current.value.trim();
-    if (!locationInput) return;
-
-    try {
-      const location = await geocodeLocation(locationInput);
-      console.log("Location:", location.lat(), location.lng());
-      const stations = await fetchNearbyRailwayStations({
-        lat: location.lat(),
-        lng: location.lng(),
-      })
-
-      if (stations.length === 0) {
-        console.error("No railway stations found nearby.")
-        return
-      }
-
-      const nearestStation = stations[0];
-
-      return nearestStation.name;
-    } catch (error) {
-      console.error("Error finding nearest station:", error)
-    }
+      });
+    });
   };
 
   return (
@@ -250,7 +216,7 @@ const Map = () => {
       position="relative"
       h="100vh"
       w="70vw"
-      ml="auto"
+      ml="2"
       flexDirection="column"
       alignItems="center"
     >
@@ -310,7 +276,7 @@ const Map = () => {
         </GoogleMap>
       </Box>
     </Flex>
-  )
-}
+  );
+};
 
-export default Map
+export default Map;

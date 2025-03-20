@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import privatebus from "../../assets/privatebus.png";
+import ksrtc from "../../assets/ksrtc.png";
 
-const PrivateBus = () => {
+const KsrtcBus = () => {
   const [busdata, setBusdata] = useState([]);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // For loader
+  const [loading, setLoading] = useState(false);
+  const [ksrtctrips, setKsrtctrips] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { start, end } = location.state || {};
@@ -14,59 +15,73 @@ const PrivateBus = () => {
   const [source, setSource] = useState(start || "");
   const [destination, setDestination] = useState(end || "");
 
-  console.log(start, end);
-  const parseTime = (timeStr) => {
-    const [time, modifier] = timeStr.split(" ");
-    let [hours, minutes] = time.split(":").map(Number);
-    if (modifier.toLowerCase() === "pm" && hours !== 12) {
-      hours += 12;
-    }
-    if (modifier.toLowerCase() === "am" && hours === 12) {
-      hours = 0;
-    }
-    return hours * 60 + minutes;
-  };
+  // const parseTime = (timeStr) => {
+  //   const [time, modifier] = timeStr.split(" ");
+  //   let [hours, minutes] = time.split(":").map(Number);
+  //   if (modifier.toLowerCase() === "pm" && hours !== 12) {
+  //     hours += 12;
+  //   }
+  //   if (modifier.toLowerCase() === "am" && hours === 12) {
+  //     hours = 0;
+  //   }
+  //   return hours * 60 + minutes;
+  // };
 
-  const getArrivalAndReachingTime = (stations, source, destination) => {
-    const sourceStation = stations.find(
-      (station) => station.station === source.toUpperCase()
-    );
-    const destinationStation = stations.find(
-      (station) => station.station === destination.toUpperCase()
-    );
+  // const getArrivalAndReachingTime = (stations, source, destination) => {
+  //   const sourceStation = stations.find(
+  //     (station) => station.station === source
+  //   );
+  //   const destinationStation = stations.find(
+  //     (station) => station.station === destination
+  //   );
 
-    if (sourceStation && destinationStation) {
-      const sourceTimeInMinutes = parseTime(sourceStation.arrivalTime);
-      const destinationTimeInMinutes = parseTime(
-        destinationStation.arrivalTime
-      );
-      const totalTimeInMinutes = destinationTimeInMinutes - sourceTimeInMinutes;
+  //   if (sourceStation && destinationStation) {
+  //     const sourceTimeInMinutes = parseTime(sourceStation.arrivalTime);
+  //     const destinationTimeInMinutes = parseTime(
+  //       destinationStation.arrivalTime
+  //     );
+  //     const totalTimeInMinutes = destinationTimeInMinutes - sourceTimeInMinutes;
 
-      const hours = Math.floor(totalTimeInMinutes / 60);
-      const minutes = totalTimeInMinutes % 60;
+  //     const hours = Math.floor(totalTimeInMinutes / 60);
+  //     const minutes = totalTimeInMinutes % 60;
 
-      return {
-        arrival_time: sourceStation.arrivalTime,
-        destination_time: destinationStation.arrivalTime,
-        total_time: `${hours} hrs ${minutes} mins`,
-      };
-    }
-    return null;
-  };
+  //     return {
+  //       arrival_time: sourceStation.arrivalTime,
+  //       destination_time: destinationStation.arrivalTime,
+  //       total_time: `${hours} hrs ${minutes} mins`,
+  //     };
+  //   }
+  //   return null;
+  // };
 
+  const token = localStorage.getItem("authToken");
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true); // Start loader
+
     try {
-      const { data } = await axios.get(
-        `https://busapi.amithv.xyz/api/v1/schedules?departure=${source}&destination=${destination}`
-      );
-      setBusdata(data || []);
-    } catch {
-      setError(
-        "Failed to fetch bus data. Please check your input and try again."
-      );
+      const fetchKSRTCTrips = async () => {
+        try {
+          const sourceName = source.split(",")[0].trim();
+          const destName = destination.split(",")[0].trim();
+          const response = await axios.get("http://127.0.0.1:8000/bus-trips/", {
+            params: {
+              source: sourceName,
+              destination: destName,
+            },
+          });
+          console.log("Response:", response.data);
+          setBusdata(response.data);
+        } catch (error) {
+          console.error("Error fetching bus trips:", error);
+          setError("Failed to load bus trips. Please try again.");
+        }
+      };
+      fetchKSRTCTrips();
+    } catch (error) {
+      console.error("Error fetching bus trips:", error);
+      setError("Failed to load bus trips. Please try again.");
     } finally {
       setLoading(false); // Stop loader
     }
@@ -84,9 +99,9 @@ const PrivateBus = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4">
-      <img src={privatebus} alt="" className="w-30 h-24 object-cover mb-6" />
+      <img src={ksrtc} alt="" className="w-30 h-24 object-cover mb-6" />
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Private Bus Schedule Finder
+        KSRTC Bus Schedule Finder
       </h1>
       <form
         onSubmit={handleSubmit}
@@ -145,13 +160,12 @@ const PrivateBus = () => {
       {busdata.length > 0 && (
         <div className="mt-8 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {busdata.map((bus, index) => {
-            const times = getArrivalAndReachingTime(
-              bus.stations,
-              source,
-              destination
-            );
-
-            return times ? (
+            // const times = getArrivalAndReachingTime(
+            //   bus.stations,
+            //   source,
+            //   destination
+            // );
+            return (
               <div
                 key={index}
                 className="bg-white p-4 rounded-lg shadow-md border border-gray-200 cursor-pointer"
@@ -161,16 +175,17 @@ const PrivateBus = () => {
                   {bus.vehicle_number}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  <strong>Departure Time:</strong> {times.arrival_time}
+                  <strong>Departure Time:</strong>{" "}
+                  {bus.stations[0].departureTime}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Arrival Time:</strong> {times.destination_time}
+                  <strong>Arrival Time:</strong> {bus.stations[0].arrivalTime}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Total Time:</strong> {times.total_time}
+                  <strong>Total Time:</strong> N/A
                 </p>
               </div>
-            ) : null;
+            );
           })}
         </div>
       )}
@@ -178,4 +193,4 @@ const PrivateBus = () => {
   );
 };
 
-export default PrivateBus;
+export default KsrtcBus;

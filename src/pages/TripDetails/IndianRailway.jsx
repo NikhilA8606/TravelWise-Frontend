@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 import irctc from "../../assets/irctc.png";
 
 const IndianRailway = () => {
-  const [source, setSource] = useState("");
-  const [destination, setDestination] = useState("");
+  const location = useLocation();
   const [trainData, setTrainData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { start, end } = location.state || {};
+
+  const [source, setSource] = useState(start || "");
+  const [destination, setDestination] = useState(end || "");
 
   const handleCardClick = (train) => {
-    console.log(train); 
+    console.log(train);
     if (train && train.stations) {
       navigate("/trainroute", {
         state: { bus, stations: bus.stations },
@@ -59,13 +63,18 @@ const IndianRailway = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4">
       <img src={irctc} alt="" className="w-20 h-24 object-cover mb-6" />
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Train Schedule Finder</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        Train Schedule Finder
+      </h1>
       <form
         onSubmit={handleSearch}
         className="w-full max-w-lg bg-white p-6 rounded-lg shadow-md space-y-4"
       >
         <div>
-          <label htmlFor="source" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="source"
+            className="block text-sm font-medium text-gray-700"
+          >
             Source Station Code
           </label>
           <input
@@ -79,7 +88,10 @@ const IndianRailway = () => {
           />
         </div>
         <div>
-          <label htmlFor="destination" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="destination"
+            className="block text-sm font-medium text-gray-700"
+          >
             Destination Station Code
           </label>
           <input
@@ -110,10 +122,12 @@ const IndianRailway = () => {
           {trainData.map((train) => (
             <div
               key={train.train_number}
-              onClick={() => handleCardClick(train)} 
+              onClick={() => handleCardClick(train)}
               className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
             >
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">{train.train_name}</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                {train.train_name}
+              </h2>
               <p className="text-sm text-gray-600">
                 <strong>Train Number:</strong> {train.train_number}
               </p>
@@ -121,7 +135,7 @@ const IndianRailway = () => {
                 <strong>Departure:</strong> {train.from_sta}
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Arrival:</strong> {train.to_std } 
+                <strong>Arrival:</strong> {train.to_std}
               </p>
             </div>
           ))}

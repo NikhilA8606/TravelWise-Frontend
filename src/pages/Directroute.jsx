@@ -14,7 +14,9 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Directroute = ({ prop: { way, rate, source, destination } }) => {
+const Directroute = ({
+  prop: { way, rate, source, destination, routeData },
+}) => {
   const navigate = useNavigate();
   const { busrate, bustime, setBustime } = useRoute();
   const [busdata, setBusdata] = useState([]);
@@ -22,6 +24,7 @@ const Directroute = ({ prop: { way, rate, source, destination } }) => {
   const [error, setError] = useState(null);
   const [firstStation, setFirstStation] = useState(null);
 
+  console.log("heyyeye:", routeData);
   useEffect(() => {
     const fetchBusData = async () => {
       if (!source || !destination) return;
@@ -49,6 +52,14 @@ const Directroute = ({ prop: { way, rate, source, destination } }) => {
   const handleCardClick = (source, destination) => {
     if (source && destination && way === "Private Bus") {
       navigate("/bus", {
+        state: {
+          start: source?.split(",")[0],
+          end: destination?.split(",")[0],
+        },
+      });
+    }
+    if (source && destination && way === "KSRTC Bus") {
+      navigate("/ksrtc", {
         state: {
           start: source?.split(",")[0],
           end: destination?.split(",")[0],
